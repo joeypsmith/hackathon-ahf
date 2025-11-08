@@ -29,8 +29,8 @@ const formSchema = z.object({
     .array(
       z.object({
         name: z.string("child name is required"),
-        age: z.number({ required_error: "Age is required" }).min(0, "Age must be positive").max(17, "Age must be under 18"),
-        dateOfBirth: z.date({ required_error: "Date of birth is required" })
+        birthday: z.coerce.date(),
+        ssn: z.string().regex(/^\d{3}-\d{2}-\d{4}$/),
       })
     )
 })
@@ -41,6 +41,7 @@ export default function Children() {
     defaultValues: {
       children: [],
     },
+    mode: "onChange",
   })
 
   const { fields, append, remove } = useFieldArray({
@@ -75,42 +76,108 @@ export default function Children() {
       </CardHeader>
       <CardContent>
         <form id="form-rhf-input" onSubmit={form.handleSubmit(onSubmit)}>
-            <FieldSet className="gap-2">
-                <FieldGroup>
-                {fields.map((field, index) => (
+          <FieldSet className="gap-2">
+            <FieldGroup>
+              {fields.map((field, index) => (
                 <Controller
-                    key={field.id}
-                    name={`children.${index}.name`}
-                    control={form.control}
-                    render={({ field: controllerField, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
+                  key={field.id}
+                  name={`children.${index}.name`}
+                  control={form.control}
+                  render={({ field: controllerField, fieldState }) => (
+                    <Card className="p-4">
+                      <CardTitle>
+                        Child {index + 1}
+                      </CardTitle>
+                      <Field data-invalid={fieldState.invalid}>
                         <Input
-                        {...field}
-                        id="form-rhf-input-child-name"
-                        aria-invalid={fieldState.invalid}
-                        placeholder="Child's Name"
+                          {...controllerField}
+                          id={`form-rhf-input-child-name-${index}`}
+                          aria-invalid={fieldState.invalid}
+                          placeholder="Child's Name"
                         />
                         {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
+                          <FieldError errors={[fieldState.error]} />
                         )}
-                    </Field>
-                    )}
+                      </Field>
+                      <Controller
+                        name={`children.${index}.birthday`}
+                        control={form.control}
+                        render={({ field, fieldState }) => {
+                          // field.value is a Date | undefined
+                          const value = field.value instanceof Date && !isNaN(field.value.getTime())
+                            ? field.value.toISOString().slice(0, 10)
+                            : ""
+
+                          return (
+                            <Field data-invalid={fieldState.invalid}>
+                              <FieldLabel htmlFor={`form-rhf-input-birthdate-${index}`}>
+                                Birthdate
+                              </FieldLabel>
+                              <Input
+                                id={`form-rhf-input-birthdate-${index}`}
+                                type="date"
+                                value={value}
+                                onChange={(e) => {
+                                  const v = e.target.value
+                                  if (v === "") {
+                                    // clear the value
+                                    field.onChange(undefined)
+                                  } else {
+                                    field.onChange(new Date(v))
+                                  }
+                                }}
+                                aria-invalid={fieldState.invalid}
+                              />
+                              <FieldDescription>
+                                Your birthdate. This field is required.
+                              </FieldDescription>
+                              {fieldState.invalid && (
+                                <FieldError errors={[fieldState.error]} />
+                              )}
+                            </Field>
+                          )
+                        }}
+                      />
+                      <Controller
+                        name={`children.${index}.ssn`}
+                        control={form.control}
+                        render={({ field, fieldState }) => {
+                          //field is valid ssn format XXX-XX-XXXX
+                          const value = field.value
+                          return (
+                            <Field>
+                              <FieldLabel htmlFor={`form-rhf-input-ssn-${index}`}>
+                                Social Security Number
+                              </FieldLabel>
+                              <Input {...field} 
+                                placeholder="XXX-XX-XXXX"
+                                aria-invalid={fieldState.invalid}
+                              />
+                              <FieldDescription>
+                                The child's SSN. Format: XXX-XX-XXXX
+                              </FieldDescription>
+                            </Field>
+                          )
+                        }}
+                      />
+                    </Card>
+                  )}
                 />
-                ))}
+              ))}
             </FieldGroup>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ name: "" })}
-                    disabled={fields.length >= 5}
-                >
-                Add Name
-                </Button>    
-            </FieldSet>
-          
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append({ name: "", birthday: undefined, ssn: "" })}
+              disabled={fields.length >= 5}
+            >
+              Add Name
+            </Button>
+          </FieldSet>
+
         </form>
-        
+
       </CardContent>
       <CardFooter>
         <Field orientation="horizontal">
