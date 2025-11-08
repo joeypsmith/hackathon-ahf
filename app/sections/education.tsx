@@ -171,3 +171,5 @@ export function EducationForm() {
     </Card>
   );
 }
+
+export default EducationForm;
