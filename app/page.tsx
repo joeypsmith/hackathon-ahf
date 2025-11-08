@@ -21,6 +21,7 @@ import Children from './sections/children'
 import CriminalHistory from './sections/criminal_history'
 import HousingHistory from './sections/housing_history'
 import Vehicles from './sections/vehicles'
+import Health from './sections/health'
 export default function Home() {
 
   const icon = null
@@ -51,6 +52,11 @@ export default function Home() {
       title: "Housing History",
       id: "housingHistory",
       component: <HousingHistory />
+    },
+    {
+      title: "Health",
+      id: "health",
+      component: <Health />
     },
     {
       title: "Review",
